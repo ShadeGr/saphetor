@@ -10,7 +10,6 @@ def get_authorization_header(request):
 
 class BasicAuthentication(BaseAuthentication):
     def authenticate(self, request):
-        print('auth')
         auth = get_authorization_header(request).split()
         
         if not auth or auth[0].lower() != "basic":

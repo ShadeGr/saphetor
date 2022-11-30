@@ -45,7 +45,6 @@ class VCFReader(ReaderSingleton):
         #Place locator at start of the actual data
         self.mfile.seek(self.start_data_pos)
         #search for id
-        print(self.mfile.size())
         rec_pos = self.mfile.find(b'\t' + id.encode() + b'\t')
         if rec_pos == -1:
            raise VCFRecordNotFound('record not found')
@@ -83,7 +82,6 @@ class VCFReader(ReaderSingleton):
                 break
             recs.append(line)
             size-= 1
-        print(recs)
         return recs
 
 
@@ -115,7 +113,7 @@ class VCFReader(ReaderSingleton):
 
     def edit_vcf_record(self, id, new_rec):
         #Get offset of the record to be edited
-        record, rec_pos, rec_size = self.get_record(id)
+        record, rec_pos, rec_size = self.get_vcf_record(id)
         diff_size = len(new_rec) -rec_size
 
         #Calculate differential size between old and new record. needed for resizing file
