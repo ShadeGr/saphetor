@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'vcfapi.apps.VcfapiConfig',
     'rest_framework',
     'rest_framework_xml',
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [
