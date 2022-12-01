@@ -20,42 +20,32 @@ class OutOfBounds(Exception):
 class VCFRecordNotFound(Exception):
     pass
 
+class FileNotFound(Exception):
+    pass
+
 class VCFReader(ReaderSingleton):
     def __init__(self, fname='') -> None:
         if fname == '':
             fname = VCF_FILE
-        with open(fname, 'a+') as vc_file:
-            #Map file with write access rights
-            mapped_file = mmap.mmap(vc_file.fileno(), 0, access=mmap.ACCESS_WRITE)
-            start_pos = 0
-            #find offset where actual data begins
-            while True:
-                line = mapped_file.readline()
-                if line.startswith(b'#'):
-                    start_pos = mapped_file.tell()
-                    continue
+        try:
+            with open(fname, 'a+') as vc_file:
+                #Map file with write access rights
+                mapped_file = mmap.mmap(vc_file.fileno(), 0, access=mmap.ACCESS_WRITE)
+                start_pos = 0
+                #find offset where actual data begins
+                while True:
+                    line = mapped_file.readline()
+                    if line.startswith(b'#'):
+                        start_pos = mapped_file.tell()
+                        continue
 
-                self.start_data_pos = start_pos
-                break
-        
-        self.mfile = mapped_file
+                    self.start_data_pos = start_pos
+                    break
+            
+            self.mfile = mapped_file
+        except Exception as e:
+            raise FileNotFound('No File found')
 
-    def load_file(self, fname):
-        with open(fname, 'a+') as vc_file:
-            #Map file with write access rights
-            mapped_file = mmap.mmap(vc_file.fileno(), 0, access=mmap.ACCESS_WRITE)
-            start_pos = 0
-            #find offset where actual data begins
-            while True:
-                line = mapped_file.readline()
-                if line.startswith(b'#'):
-                    start_pos = mapped_file.tell()
-                    continue
-
-                self.start_data_pos = start_pos
-                break
-        
-        self.mfile = mapped_file
     def get_vcf_record(self, id):
         #Place locator at start of the actual data
         self.mfile.seek(self.start_data_pos)
