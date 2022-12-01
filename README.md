@@ -63,7 +63,7 @@ Eg */home/user/path/to/file.vcf*
 
 ## Starting the server
 
-In project directory there should be a python file manage.py
+In project directory
 
 `python manage.py runserver`
 
