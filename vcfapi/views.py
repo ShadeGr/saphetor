@@ -8,6 +8,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework_xml.renderers import XMLRenderer
 from rest_framework.parsers import JSONParser
 from rest_framework_xml.parsers import XMLParser
+
 # Create your views here.
 class VCFView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -46,7 +47,7 @@ class VCFView(APIView):
             if not request.query_params.get('id') or request.query_params.get('id') != request.data['ID']:
                 return Response('No id or id is not matching record', status=status.HTTP_400_BAD_REQUEST)
             res = EditRecord(request).response
-            return Response(res, status=status.HTTP_200_OK)
+            return Response(None, status=status.HTTP_200_OK)
         except RecordNotFound as e:
             return Response(str(e), status=status.HTTP_404_NOT_FOUND)
     

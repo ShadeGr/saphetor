@@ -58,5 +58,3 @@ target/
 
 /.project
 /.pydevproject
-vcfapi/__pycache__/usecases.cpython-311.pyc
-vcfapi/__pycache__/vcfreader.cpython-311.pyc

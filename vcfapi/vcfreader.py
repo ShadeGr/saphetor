@@ -1,10 +1,11 @@
 import mmap
+from saphetor.settings import VCF_FILE
 
 class ReaderSingleton(object):
     
     _instance = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, fname='', *args, **kwargs):
         """
         Possible changes to the value of the `__init__` argument do not affect
         the returned instance.
@@ -22,8 +23,7 @@ class VCFRecordNotFound(Exception):
 class VCFReader(ReaderSingleton):
     def __init__(self, fname='') -> None:
         if fname == '':
-            fname = "e:/saphetor/vcfapi/vcf_data.vcf"
-
+            fname = VCF_FILE
         with open(fname, 'a+') as vc_file:
             #Map file with write access rights
             mapped_file = mmap.mmap(vc_file.fileno(), 0, access=mmap.ACCESS_WRITE)
@@ -40,7 +40,22 @@ class VCFReader(ReaderSingleton):
         
         self.mfile = mapped_file
 
+    def load_file(self, fname):
+        with open(fname, 'a+') as vc_file:
+            #Map file with write access rights
+            mapped_file = mmap.mmap(vc_file.fileno(), 0, access=mmap.ACCESS_WRITE)
+            start_pos = 0
+            #find offset where actual data begins
+            while True:
+                line = mapped_file.readline()
+                if line.startswith(b'#'):
+                    start_pos = mapped_file.tell()
+                    continue
 
+                self.start_data_pos = start_pos
+                break
+        
+        self.mfile = mapped_file
     def get_vcf_record(self, id):
         #Place locator at start of the actual data
         self.mfile.seek(self.start_data_pos)
@@ -68,8 +83,6 @@ class VCFReader(ReaderSingleton):
         #skip till offset
         while offset > 0:
             line = self.mfile.readline()
-            if offset < 2:
-                print(line)
             if not line or line == '':
                 raise OutOfBounds("offset out of bounds")
             
@@ -113,8 +126,9 @@ class VCFReader(ReaderSingleton):
 
     def edit_vcf_record(self, id, new_rec):
         #Get offset of the record to be edited
+        new_rec = new_rec.encode() + b'\n'
         record, rec_pos, rec_size = self.get_vcf_record(id)
-        diff_size = len(new_rec) -rec_size
+        diff_size = len(new_rec) - rec_size
 
         #Calculate differential size between old and new record. needed for resizing file
         new_size = self.mfile.size() + diff_size
@@ -124,14 +138,14 @@ class VCFReader(ReaderSingleton):
 
         #if new record is bigger than old, resize file first
         if diff_size > 0:
-            self.mfile.resize(new_size)
+            self.mfile.resize(new_size + 1)
         
         #Copy all data after old record to new offset. New offset is the start of the line of the old record + length of the new record.
         self.mfile.move(rec_pos+len(new_rec), rec_pos + rec_size, move_size)
         #place file locator at the start of the old record
         self.mfile.seek(rec_pos)
         #write new record in place of the old one
-        self.mfile.write(new_rec.encode())
+        self.mfile.write(new_rec)
         self.mfile.flush()
 
 

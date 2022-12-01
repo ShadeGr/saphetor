@@ -138,3 +138,6 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ]
 }
+
+VCF_FILE =  "e:/saphetor/vcfapi/vcf_data.vcf"
+VCF_TEST_FILE =  "e:/saphetor/vcfapi/test_data.vcf"
