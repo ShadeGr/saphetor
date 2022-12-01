@@ -1,4 +1,4 @@
-import mmap
+import mmap, os
 from saphetor.settings import VCF_FILE
 
 class ReaderSingleton(object):
@@ -27,24 +27,32 @@ class VCFReader(ReaderSingleton):
     def __init__(self, fname='') -> None:
         if fname == '':
             fname = VCF_FILE
-        try:
-            with open(fname, 'a+') as vc_file:
-                #Map file with write access rights
-                mapped_file = mmap.mmap(vc_file.fileno(), 0, access=mmap.ACCESS_WRITE)
-                start_pos = 0
-                #find offset where actual data begins
-                while True:
-                    line = mapped_file.readline()
-                    if line.startswith(b'#'):
-                        start_pos = mapped_file.tell()
-                        continue
-
-                    self.start_data_pos = start_pos
-                    break
-            
-            self.mfile = mapped_file
-        except Exception as e:
+        self.fname = fname
+        self.mfile = None
+        self.map()
+    
+    def map(self):
+        if not os.path.exists(self.fname):
             raise FileNotFound('No File found')
+        with open(self.fname, 'a+') as vcf_file:
+            #Map file with write access rights
+            mapped_file = mmap.mmap(vcf_file.fileno(), 0, access=mmap.ACCESS_WRITE)
+            start_pos = 0
+            #find offset where actual data begins
+            while True:
+                line = mapped_file.readline()
+                if line.startswith(b'#'):
+                    start_pos = mapped_file.tell()
+                    continue
+
+                self.start_data_pos = start_pos
+                break
+        
+        self.mfile = mapped_file
+
+    def unmap(self):
+        if self.mfile:
+            self.mfile.close() 
 
     def get_vcf_record(self, id):
         #Place locator at start of the actual data
@@ -95,14 +103,12 @@ class VCFReader(ReaderSingleton):
         total_size = self.mfile.size()
         #calculate size of data after the requested record
         move_size = total_size - rec_pos - rec_size
-        #print('file size before delete: ' + str(total_size))
         
         #copy rest of data on top of the record that we want to delete
         self.mfile.move(rec_pos, (rec_pos + rec_size), move_size)
         self.mfile.flush()
         #resize file to new size
         self.mfile.resize(total_size - rec_size)
-        #print('file size after delete: ' + str(self.mfile.size()))
 
     def insert_vcf_record(self, rec):
         #Calculate new size of file including new record
@@ -122,7 +128,7 @@ class VCFReader(ReaderSingleton):
 
         #Calculate differential size between old and new record. needed for resizing file
         new_size = self.mfile.size() + diff_size
-        #print('Old size: ' + str(self.mfile.size()) + ' New size: ' + str(new_size))
+
         #Calculate data size of all records after the one to be edited (old_rec)
         move_size = self.mfile.size() - rec_pos - rec_size
 
