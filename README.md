@@ -141,9 +141,14 @@ Authorization: Basic test
 
 id in url must match the id in json body
 
+## Documentation
+
+API documentation can be found in http://localhost:8000/documentation
+
 ## Running tests
 
 `python manage.py test vcfapi.tests.VCFApiTestcase`
 
-Note: Running tests needs a vcf file that will 
+
+
 
